@@ -3,6 +3,7 @@ var app = express();
 var bodyParser = require('body-parser');
 var multer = require('multer');
 var fs = require('fs');
+var cors = require('cors');
 const csv = require('csvtojson');
 const bwipjs = require('bwip-js');
 var zip = require('express-zip');
@@ -10,6 +11,7 @@ var zip = require('express-zip');
 var barcodeJson = []; // from csv file
 var barcodeFiles = []; // generate barcode as png file
 
+app.use(cors());
 app.use(bodyParser.json());
 
 //multers disk storage settings
@@ -39,38 +41,29 @@ var upload = multer({
 app.post('/upload', function (req, res) {
     console.log('csv file upload requesting...')
     barcodeJson = [];
-    
-    barcodeFiles.forEach(element => {
-        fs.unlinkSync(element.path); // Deleting the barcode png
-    });
+
+    // barcodeFiles.forEach(element => {
+    //     fs.unlinkSync(element.path); // Deleting the barcode png
+    // });
 
     upload(req, res, function (err) {
         if (err) {
             res.json({ error_code: 1, err_desc: err });
             return;
         }
-        /** Multer gives us file info in req.file object */
-        if (!req.file) {
-            res.json({ error_code: 1, err_desc: "No file passed" });
-            return;
-        }
 
-        const csvFilePath = req.file.path;
-        // console.log(csvFilePath);
-        try {
-            csv()
-                .fromFile(csvFilePath)
-                .then((jsonObj) => {
-                    barcodeJson = jsonObj;
-                    fs.unlinkSync(csvFilePath); // Deleting the uploaded file
-                });
+        let csvDataBuffer = JSON.stringify(req.body);
+        let csvData = JSON.parse(csvDataBuffer).data;
+        let csvDataString = csvData.toString("utf8");
 
-            console.log('Uploaded successfully')
-            res.json({ error_code: 0, err_desc: null, data: "Uploaded successfully" });
-        } catch (e) {
-            res.json({ error_code: 1, err_desc: "Corupted csv file" });
-        }
-    })
+        return csv()
+            .fromString(csvDataString)
+            .then(json => {
+                barcodeJson = json;
+                console.log('barcodeJson>>>', barcodeJson)
+                return res.json({ error_code: 0, err_desc: null, message: "Uploaded successfully" });
+            })
+    });
 
 });
 
@@ -108,29 +101,37 @@ app.get('/generate', function (req, res) {
             })
             .catch(err => {
                 console.log('generate barcode error>>', err)
+                res.json({ error_code: 1, err_desc: err });
             });
 
     });
 
     console.log('generating barcode is finished...')
-    res.json({ error_code: 0, err_desc: null, data: "Barcode is generated successfully" });
+    res.json({ error_code: 0, err_desc: null, message: "Barcode is generated successfully" });
 });
 
 app.get('/download', function (req, res) {
-    console.log('download api is working>>');
+    console.log('download api is working...');
     if (!barcodeFiles.length) {
         console.log('there is no data to download');
         res.json({ error_code: 1, err_desc: "there is no data to download" });
         return;
     }
 
+    console.log('barcodeFiles>>>', barcodeFiles);
     res.zip(barcodeFiles);
+    console.log('download api is finished');
 });
 
-app.get('/', function (req, res) {
-    console.log('api is working fine...')
-    res.sendFile(__dirname + "/index.html");
-});
+// app.get('/', function (req, res) {
+//     console.log('api is working fine...')
+//     res.sendFile(__dirname + "/index.html");
+// });
+
+app.get('/test', function (req, res) {
+    console.log('test api is working');
+    res.json({ error_code: 0, err_desc: null, message: "test api is working fine" });
+})
 
 app.listen('3000', function () {
     console.log('running on 3000...');
