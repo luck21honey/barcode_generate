@@ -102,6 +102,7 @@ app.get('/generate', function (req, res) {
             .catch(err => {
                 console.log('generate barcode error>>', err)
                 res.json({ error_code: 1, err_desc: err });
+                return;
             });
 
     });
