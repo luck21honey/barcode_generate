@@ -42,10 +42,6 @@ app.post('/upload', function (req, res) {
     console.log('csv file upload requesting...')
     barcodeJson = [];
 
-    // barcodeFiles.forEach(element => {
-    //     fs.unlinkSync(element.path); // Deleting the barcode png
-    // });
-
     upload(req, res, function (err) {
         if (err) {
             res.json({ error_code: 1, err_desc: err });
@@ -59,7 +55,32 @@ app.post('/upload', function (req, res) {
         return csv()
             .fromString(csvDataString)
             .then(json => {
-                barcodeJson = json;
+                let filteredJSON = [];
+                // filter existing barcode
+                if (barcodeFiles.length) {
+                    json.forEach(element => {
+                        let fileName = element['type;value'].split(';') + '.png';
+                        let flag = true;
+
+                        console.log('filename>>>', fileName);
+
+                        barcodeFiles.every(barcode => {
+                            if (barcode.name === fileName) {
+                                flag = false;
+                                return false;
+                            }
+                        });
+
+                        if (flag) {
+                            filteredJSON.push(element)
+                        }
+                    });
+
+                    barcodeJson = filteredJSON;
+                } else {
+                    barcodeJson = json;
+                }
+
                 console.log('barcodeJson>>>', barcodeJson)
                 return res.json({ error_code: 0, err_desc: null, message: "Uploaded successfully" });
             })
@@ -69,11 +90,21 @@ app.post('/upload', function (req, res) {
 
 app.get('/generate', function (req, res) {
     console.log('generating barcode is started...')
-    barcodeFiles = [];
+
     if (!barcodeJson.length) {
         res.json({ error_code: 1, err_desc: "Please upload csv file" });
         return;
     }
+
+    if (barcodeFiles.length) {
+        console.log('Deleting barcode images');
+        barcodeFiles.forEach(element => {
+            fs.unlinkSync(element.path); // Deleting the barcode png
+        });
+
+        barcodeFiles = [];
+    }
+
 
     barcodeJson.forEach((element, index) => {
         console.log(index, ' element>>>', element)
@@ -119,7 +150,9 @@ app.get('/download', function (req, res) {
     }
 
     console.log('barcodeFiles>>>', barcodeFiles);
-    res.zip(barcodeFiles);
+
+    res.zip(barcodeFiles)
+
     console.log('download api is finished');
 });
 
