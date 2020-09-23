@@ -22,3 +22,7 @@ Then {"error_code":0,"err_desc":null,"message":"test api is working fine"} will 
 - ng serve
 
 http://localhost:4200 is running
+
+Thank you!
+Good luck :)
+
