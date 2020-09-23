@@ -94,10 +94,9 @@ app.get('/generate', function (req, res) {
             textxalign: 'center',
         })
             .then(png => {
-                var datetimestamp = Date.now();
-                var filePath = `./barcodes/${datetimestamp}-${type}-${data}.png`;
+                var filePath = `./barcodes/${data}.png`;
                 fs.writeFileSync(filePath, png);
-                barcodeFiles.push({ path: filePath, name: `${datetimestamp}-${type}-${data}.png` });
+                barcodeFiles.push({ path: filePath, name: `${data}.png` });
             })
             .catch(err => {
                 console.log('generate barcode error>>', err)
