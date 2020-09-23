@@ -99,7 +99,11 @@ app.get('/generate', function (req, res) {
     if (barcodeFiles.length) {
         console.log('Deleting barcode images');
         barcodeFiles.forEach(element => {
-            fs.unlinkSync(element.path); // Deleting the barcode png
+            fs.unlink(element.path, function (err) {
+                if (err) throw err;
+                console.log('File deleted..');
+            })
+            // fs.unlinkSync(element.path); // Deleting the barcode png
         });
 
         barcodeFiles = [];
