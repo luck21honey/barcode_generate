@@ -41,6 +41,8 @@ var upload = multer({
 app.post('/upload', function (req, res) {
     console.log('csv file upload requesting...')
     barcodeJson = [];
+    var tempBarcodeJson = [];
+
 
     upload(req, res, function (err) {
         if (err) {
@@ -76,10 +78,18 @@ app.post('/upload', function (req, res) {
                         }
                     });
 
-                    barcodeJson = filteredJSON;
+                    tempBarcodeJson = filteredJSON;
                 } else {
-                    barcodeJson = json;
+                    tempBarcodeJson = json;
                 }
+
+                // remove duplicate barcode
+                var valueArr = tempBarcodeJson.map(function (item) { return item['type;value'] });
+                valueArr.some(function (item, idx) {
+                    if (valueArr.indexOf(item) == idx) {
+                        barcodeJson.push(tempBarcodeJson[idx]);
+                    }
+                });
 
                 console.log('barcodeJson>>>', barcodeJson)
                 return res.json({ error_code: 0, err_desc: null, message: "Uploaded successfully" });
