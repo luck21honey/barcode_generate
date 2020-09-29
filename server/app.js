@@ -1,6 +1,7 @@
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
+var multer = require('multer');
 var fs = require('fs');
 var cors = require('cors');
 const csv = require('csvtojson');
@@ -11,6 +12,29 @@ var canvas = new Canvas.Canvas();
 
 app.use(cors());
 app.use(bodyParser.json());
+
+//multers disk storage settings
+var storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, './')
+    },
+    filename: function (req, file, cb) {
+        var datetimestamp = Date.now();
+        cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length - 1])
+    }
+});
+
+//multer settings
+var upload = multer({
+    storage: storage,
+    fileFilter: function (req, file, callback) {
+        //file filter
+        if (['csv'].indexOf(file.originalname.split('.')[file.originalname.split('.').length - 1]) === -1) {
+            return callback(new Error('Wrong extension type'));
+        }
+        callback(null, true);
+    }
+}).single('file');
 
 var barcodeJson = []; // from csv file
 var barcodeFiles = []; // generate barcode as png file
