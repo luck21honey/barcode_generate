@@ -1,52 +1,25 @@
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
-var multer = require('multer');
 var fs = require('fs');
 var cors = require('cors');
 const csv = require('csvtojson');
-// const bwipjs = require('bwip-js');
 var zip = require('express-zip');
-
 var JsBarcode = require('jsbarcode');
 var Canvas = require("canvas");
 var canvas = new Canvas.Canvas();
 
-var barcodeJson = []; // from csv file
-var barcodeFiles = []; // generate barcode as png file
-
 app.use(cors());
 app.use(bodyParser.json());
 
-//multers disk storage settings
-var storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, './')
-    },
-    filename: function (req, file, cb) {
-        var datetimestamp = Date.now();
-        cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length - 1])
-    }
-});
-
-//multer settings
-var upload = multer({
-    storage: storage,
-    fileFilter: function (req, file, callback) {
-        //file filter
-        if (['csv'].indexOf(file.originalname.split('.')[file.originalname.split('.').length - 1]) === -1) {
-            return callback(new Error('Wrong extension type'));
-        }
-        callback(null, true);
-    }
-}).single('file');
+var barcodeJson = []; // from csv file
+var barcodeFiles = []; // generate barcode as png file
 
 /** API path that will upload the files */
 app.post('/upload', function (req, res) {
     console.log('csv file upload requesting...')
     barcodeJson = [];
     var tempBarcodeJson = [];
-
 
     upload(req, res, function (err) {
         if (err) {
@@ -117,13 +90,11 @@ app.get('/generate', function (req, res) {
                 if (err) return console.log('no such file or directory...', err);
                 console.log('File deleted..');
             })
-            // fs.unlinkSync(element.path); // Deleting the barcode png
         });
         console.log('Deleting barcode images finished...');
 
         barcodeFiles = [];
     }
-
 
     barcodeJson.forEach((element, index) => {
         console.log(index, ' element>>>', element)
@@ -147,26 +118,6 @@ app.get('/generate', function (req, res) {
         fs.writeFileSync(filePath, buffer);
         barcodeFiles.push({ path: filePath, name: `${data}.png` });
 
-
-        // bwipjs.toBuffer({
-        //     bcid: type,       // Barcode type
-        //     text: data,    // Text to encode
-        //     scale: 3,               // 3x scaling factor
-        //     height: 10,              // Bar height, in millimeters
-        //     includetext: true,
-        //     textxalign: 'center',
-        // })
-        //     .then(png => {
-        //         var filePath = `./barcodes/${data}.png`;
-        //         fs.writeFileSync(filePath, png);
-        //         barcodeFiles.push({ path: filePath, name: `${data}.png` });
-        //     })
-        //     .catch(err => {
-        //         console.log('generate barcode error>>', err)
-        //         res.json({ error_code: 1, err_desc: err });
-        //         return;
-        //     });
-
     });
 
     console.log('generating barcode is finished...')
@@ -186,24 +137,6 @@ app.get('/download', function (req, res) {
     res.zip(barcodeFiles)
 
     console.log('download api is finished');
-});
-
-app.get('/', function (req, res) {
-    // console.log('api is working fine...')
-
-    // var canvas = new Canvas.Canvas();
-
-    // JsBarcode(canvas, "0088407977804", {
-    //     format: "ean13",
-    //     displayValue: true
-    // });
-    // console.log('canvasssss', canvas)
-
-    // const buffer = canvas.toBuffer('image/png')
-    // fs.writeFileSync('./image.png', buffer)
-
-    // res.sendFile(__dirname + "/index.html");
-    
 });
 
 app.get('/test', function (req, res) {
