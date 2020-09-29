@@ -99,26 +99,44 @@ app.post('/upload', function (req, res) {
 
 });
 
-app.get('/generate', function (req, res) {
-    console.log('generating barcode is started...')
+var deleteFiles = async () => {
+    return new Promise((resolve, reject) => {
+        if (barcodeFiles.length) {
+            console.log('Deleting barcode images started...');
+            barcodeFiles.forEach((element, i) => {
+                fs.unlink(element.path, function (err) {
+                    if (err) {
+                        console.log('no such file or directory...', err);
+                        reject(err)
+                    }
+                    console.log(`${i} -- File deleted..`);
+                })
+            });
+            console.log('Deleting barcode images finished...');
 
+            barcodeFiles = [];
+            resolve();
+        } else {
+            console.log('barcodeFiles length == 0')
+            resolve();
+        }
+    })
+
+}
+
+app.get('/generate', async function (req, res) {
     if (!barcodeJson.length) {
         res.json({ error_code: 1, err_desc: "Please upload csv file" });
         return;
     }
 
-    if (barcodeFiles.length) {
-        console.log('Deleting barcode images started...');
-        barcodeFiles.forEach(element => {
-            fs.unlink(element.path, function (err) {
-                if (err) return console.log('no such file or directory...', err);
-                console.log('File deleted..');
-            })
-        });
-        console.log('Deleting barcode images finished...');
+    console.log('barcodeFiles length before>>>', barcodeFiles.length)
 
-        barcodeFiles = [];
-    }
+    await deleteFiles();
+    
+    console.log('barcodeFiles length after>>>', barcodeFiles.length)
+
+    console.log('generating barcode is started...')
 
     barcodeJson.forEach((element, index) => {
         console.log(index, ' element>>>', element)
@@ -168,6 +186,9 @@ app.get('/test', function (req, res) {
     res.json({ error_code: 0, err_desc: null, message: "test api is working fine" });
 })
 
+app.use(express.static(__dirname + '/dist/client'));
+
 app.listen('3000', function () {
     console.log('running on 3000...');
 });
+
