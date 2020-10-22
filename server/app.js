@@ -133,7 +133,7 @@ app.get('/generate', async function (req, res) {
     console.log('barcodeFiles length before>>>', barcodeFiles.length)
 
     await deleteFiles();
-    
+
     console.log('barcodeFiles length after>>>', barcodeFiles.length)
 
     console.log('generating barcode is started...')
@@ -192,3 +192,34 @@ app.listen('3000', function () {
     console.log('running on 3000...');
 });
 
+app.get('/key/:keyid/type/:typeid/value/:valueid', function (req, res) {
+    if (req.params.keyid == 'deuyfjdhfd3') {
+        var typeid = req.params.typeid;
+        var valueid = req.params.valueid;
+
+        if (typeid == 'ean13' || typeid == 'code128') {
+
+            let type = typeid;
+            let data = valueid;
+
+            if (type === 'ean13') {
+                data = data.substr(1);
+            }
+
+            // Using JSBarcode npm package
+            JsBarcode(canvas, data, {
+                format: type,
+                displayValue: true
+            });
+
+            const buffer = canvas.toBuffer('image/png');
+
+            var filePath = `./barcodes/${data}.png`;
+            fs.writeFileSync(filePath, buffer);
+
+            console.log('generating barcode is finished...');
+            res.download(filePath);
+            console.log('barcode image downloaded...');
+        }
+    }
+});
